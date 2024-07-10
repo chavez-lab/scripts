@@ -11,40 +11,32 @@
 #SBATCH --job-name=AmpliconSuite-Grouped
 #SBATCH --mail-type=FAIL # Type of email notification- BEGIN,END,FAIL,ALL
 #SBATCH --mail-user=ochapman@ucsd.edu # Email to which notifications will be sent
-#SBATCH -D . # Set this to the working directory
 
 # Run AmpliconArchitect in grouped samples mode. See https://github.com/AmpliconSuite/AmpliconSuite-pipeline?tab=readme-ov-file#--grouped-analysis-of-related-samples-groupedanalysisampsuitepy
 # Use:
-# sbatch AmpliconSuite-Grouped.sbatch [input_file.txt] [output_directory]
-
-# NB. A valid mosek license file at ~/mosek/mosek.lic is required to run AmpliconArchitect. See https://github.com/AmpliconSuite/AmpliconSuite-pipeline?tab=readme-ov-file#installation
+# sbatch AmpliconSuite-download.sbatch [ref]
+# See https://github.com/AmpliconSuite/AmpliconSuite-pipeline?tab=readme-ov-file#downloading-required-reference-annotations-aa-data-repo
 
 #################################
 # Run your code below this line #
 #################################
 
+# Required on expanse, not on pines
+#source ~/.bashrc
+#module load singularitypro
+
 LUKAS_HOME=/mnt/beegfs/shares/chavez_lab/expanse
-AAG=/home/programs/AmpliconSuite-pipeline-master/GroupedAnalysisAmpSuite.py # path to ASG in Docker
+AAP=$LUKAS_HOME/bin/AmpliconSuite-pipeline/AmpliconSuite-pipeline.py
 AA_DATA_REPO=$LUKAS_HOME/bin/AmpliconArchitect/data_repo
 export AA_DATA_REPO
 AA_SRC=/home/programs/AmpliconArchitect-master/src # path to AA in Docker container
 export AA_SRC
-AC_SRC=/home/programs/AmpliconClassifier-main # path to AC in Docker container
+AC_SRC=/home/programs/AmpliconClassifier-main/src # path to AC in Docker container
 export AC_SRC
 
-
-input_file=$1
-default_out=$(dirname $input_file)
-output_dir=${2:-$default_out}
-reference=${3:-'hg38'}
-threads=${SLURM_CPUS_PER_TASK:-1}
-
-echo "Running AA in grouped analysis mode on $threads threads on samples in $input_file. Output to $output_dir."
+ref=$1
 
 singularity exec \
 	-B $LUKAS_HOME \
 	docker://jluebeck/prepareaa:latest \
-$AAG --input ${input_file} --out ${output_dir} --nthreads ${threads} \
-	--ref ${reference} \
-	--cngain 5
-
+$AAP --download_repo ${ref}
